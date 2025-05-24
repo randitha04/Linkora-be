@@ -1,1 +1,1 @@
-# campus_connect
+# Linkora
