@@ -4,7 +4,7 @@ const app = express();
 const router = require('./routes/main.router')
 
 // routes
-app.use("/api/auth", router);
+app.use("/api/vi", router);
 
 app.post('/',(res,req)=>{
        res.status(200).json({ message: 'hellow' });
