@@ -10,9 +10,9 @@ const Routers = require('./src/routes/main.router');
 
 app.use('/api/vi/auth', Routers);
 
-app.listen(5000, () => {
-  console.log(
-    "Server running at http://localhost:5000".bgRed.white.bold + "\n" +
-    "API is ready to accept requests!".blue
-  );
+app.get("/test", (req, res) => {
+  res.status(200).json({ message: 'Fetch current user logic goes here.' });
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
