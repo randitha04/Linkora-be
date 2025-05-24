@@ -1,11 +1,14 @@
 const express = require("express");
 const app = express();
 
-// routes
-app.get("/", (req, res) => {
-  res.send("Hello Choreo!");
-});
+const router = require('./routes/main.router')
 
+// routes
+app.use("/api/auth", router);
+
+app.post('/',(res,req)=>{
+       res.status(200).json({ message: 'hellow' });
+})
 // listen
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
