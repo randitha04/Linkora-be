@@ -1,15 +1,18 @@
-const express = require('express');
-const colors = require('colors'); 
+const express = require("express");
+const cors = require("cors");
+require('colors');  
+
 const app = express();
-const port = 3000;
+app.use(cors({ origin: true }));
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+const Routers = require('./src/routes/main.router');
 
+app.use('/api/vi/auth', Routers);
 
-app.listen(port, () => {
-  console.log(colors.green(`🚀 Server is running at http://localhost:${port}`));
-  console.log(colors.cyan(`🌐 Listening on port ${port}`));
-  console.log(colors.yellow('🔧 Ready for requests...'));
+app.listen(5000, () => {
+  console.log(
+    "Server running at http://localhost:5000".bgRed.white.bold + "\n" +
+    "API is ready to accept requests!".blue
+  );
 });
