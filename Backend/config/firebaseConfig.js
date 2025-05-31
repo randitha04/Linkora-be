@@ -1,12 +1,14 @@
-const admin = require("firebase-admin");
 
-const serviceAccountJSON = Buffer.from(
-  process.env.FIREBASE_KEY_BASE64,
-  "base64"
-).toString("utf8");
+var admin = require("firebase-admin");
 
-const serviceAccount = JSON.parse(serviceAccountJSON);
+var serviceAccount = require("../../../Service account/Service-account-key.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  
 });
+
+const db = admin.firestore();
+const adminAuth = admin.auth();
+
+module.exports = { admin,db ,adminAuth};

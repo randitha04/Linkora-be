@@ -11,13 +11,13 @@ const registerUser = async (req, res) => {
 
   console.log('Registering user...');
 
-  // Validate required fields
+  
   if (!email || !password || !name) {
     return res.status(400).json({ message: "Email, name, and password are required" });
   }
 
   try {
-    // Check if user is already registered (by email)
+    
     const existingUser = await db.collection("users")
       .where("email", "==", email)
       .limit(1)
@@ -29,13 +29,13 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Create Firebase Auth user
+    
     const userRecord = await admin.auth().createUser({
       email,
       password,
     });
 
-    // Save user data in Firestore
+
     await db.collection("users").doc(userRecord.uid).set({
       uid: userRecord.uid,
       email,
@@ -44,7 +44,7 @@ const registerUser = async (req, res) => {
       facultyName: "",
       degreeName: "",
       universityYear: "",
-      relationshipState: "", // "Looking", "Not interested", "In a relationship"
+      relationshipState: "", 
       whoAmI: "",
       interests: "",
       achievements: "",
