@@ -1,14 +1,14 @@
 const express = require("express");
 const app = express();
 
-const router = require('./routes/main.router')
+const routers = require('./routes/main.router')
+
+app.use(express.json());
 
 // routes
-app.use("/api/auth", router);
+app.use("/api/vi", routers);
 
-app.post('/',(res,req)=>{
-       res.status(200).json({ message: 'hellow' });
-})
+
 // listen
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

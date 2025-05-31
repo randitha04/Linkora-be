@@ -56,14 +56,13 @@ const updateCollaboration = async (req, res) => {
       return res.status(404).json({ message: "Collaboration not found." });
     }
 
-    // Prepare updated fields
     const updatedData = {};
     if (title) updatedData.title = title;
     if (description) updatedData.description = description;
     if (tags) updatedData.tags = tags;
     if (users) updatedData.users = users;
 
-    // Update in Firestore
+
     await collabRef.update(updatedData);
 
     return res.status(200).json({

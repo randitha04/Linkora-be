@@ -1,3 +1,47 @@
+const { db, admin } = require('../config/firebaseConfig');
+
+
+
+const getUserProfile = async (req, res) => {
+   const { uid } = req.query; 
+  if (!uid) {
+    return res.status(400).json({ message: "User ID (uid) is required" });
+  }
+  try {
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const userData = userDoc.data();
+    return res.status(200).json({
+      message: "User profile fetched successfully",
+      profile: {
+        uid,
+        universityName: userData.universityName || "",
+        facultyName: userData.facultyName || "",
+        degreeName: userData.degreeName || "",
+        universityYear: userData.universityYear || "",
+        relationshipState: userData.relationshipState || "",
+        whoAmI: userData.whoAmI || "",
+        interests: userData.interests || "",
+        achievements: userData.achievements || "",
+        abilities: userData.abilities || "",
+        updatedAt: userData.updatedAt || null,
+      }
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    return res.status(500).json({
+      message: "Failed to fetch profile",
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
+
+
+
 
 const updateUserProfile = async (req, res) => {
   const {
@@ -52,7 +96,7 @@ const updateUserProfile = async (req, res) => {
 
 
 const deleteUserProfile = async (req, res) => {
-  const { uid } = req.body;
+  const { uid } = req.query;
 
   if (!uid) {
     return res.status(400).json({ message: "User ID (uid) is required" });
@@ -115,15 +159,32 @@ const sendFriendRequest = async (req, res) => {
   }
 };
 
-const acceptFriendRequest = async (req, res) => {
-  const { requestId } = req.body;
 
-  if (!requestId) {
-    return res.status(400).json({ message: "Request ID required" });
+
+const acceptFriendRequest = async (req, res) => {
+  const { fromUid, toUid } = req.body;
+
+  if (!fromUid || !toUid) {
+    return res.status(400).json({ message: "Both fromUid and toUid are required" });
   }
 
   try {
-    await db.collection("Friends").doc(requestId).update({
+   
+    const requestSnapshot = await db.collection("Friends")
+      .where("fromUid", "==", fromUid)
+      .where("toUid", "==", toUid)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+
+    if (requestSnapshot.empty) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    const requestDoc = requestSnapshot.docs[0];
+
+    
+    await requestDoc.ref.update({
       status: "accepted"
     });
 
@@ -135,8 +196,9 @@ const acceptFriendRequest = async (req, res) => {
   }
 };
 
+
 const getFriends = async (req, res) => {
-  const { uid } = req.params;
+  const { uid } = req.query;
 
   try {
     const friendsSnapshot = await db.collection("Friends")
@@ -235,7 +297,9 @@ const getFriendSuggestions = async (req, res) => {
 };
 
 
-
+module.exports = {
+  updateUserProfile,deleteUserProfile,sendFriendRequest,acceptFriendRequest,getFriends,getFriendSuggestions,getUserProfile
+}
 
 
 
