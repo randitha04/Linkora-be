@@ -1,0 +1,5 @@
+name: linkora-backend
+componentType: service
+projectType: nodejs
+source:
+  dir: .
