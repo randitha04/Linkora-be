@@ -7,7 +7,7 @@ const {verifyFirebaseToken} = require('../../middleware/authMiddleware');
 
 
 // Get user profile
-router.get("/get-profile/", profileController.getUserProfile);
+router.get("/get-profile/",verifyFirebaseToken, profileController.getUserProfile);
 
 // Update user profile
 router.put("/update-profile/", profileController.updateUserProfile);
@@ -21,8 +21,13 @@ router.post("/friend-request", profileController.sendFriendRequest);
 // Accept friend request
 router.post("/accept-request", profileController.acceptFriendRequest);
 
+
+
 // Get all friends
 router.get("/friends/",profileController.getFriends);
+
+//Get friends profile
+router.get("/friends-profile/" , profileController.getFriendProfile);
 
 // // Get friend suggestions
 // router.get("/friend-suggestions/:uid", profileController.getFriendSuggestions);
