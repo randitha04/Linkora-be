@@ -2,8 +2,10 @@ const { db, admin } = require('../config/firebaseConfig');
 
 
 
+
+
 const getUserProfile = async (req, res) => {
-   const { uid } = req.query; 
+  const { uid } = req.query;
   if (!uid) {
     return res.status(400).json({ message: "User ID (uid) is required" });
   }
@@ -40,17 +42,14 @@ const getUserProfile = async (req, res) => {
 };
 
 
-
-
-
 const updateUserProfile = async (req, res) => {
   const {
-    uid, 
+    uid,
     universityName,
     facultyName,
     degreeName,
     universityYear,
-    relationshipState, 
+    relationshipState,
     whoAmI,
     interests,
     achievements,
@@ -160,7 +159,6 @@ const sendFriendRequest = async (req, res) => {
 };
 
 
-
 const acceptFriendRequest = async (req, res) => {
   const { fromUid, toUid } = req.body;
 
@@ -169,7 +167,7 @@ const acceptFriendRequest = async (req, res) => {
   }
 
   try {
-   
+
     const requestSnapshot = await db.collection("Friends")
       .where("fromUid", "==", fromUid)
       .where("toUid", "==", toUid)
@@ -183,7 +181,7 @@ const acceptFriendRequest = async (req, res) => {
 
     const requestDoc = requestSnapshot.docs[0];
 
-    
+
     await requestDoc.ref.update({
       status: "accepted"
     });
@@ -296,9 +294,39 @@ const getFriendSuggestions = async (req, res) => {
   }
 };
 
+const getFriendProfile = async (req, res) => {
+  const { uid } = req.query;
+
+  if (!uid) {
+    return res.status(400).json({ message: "Friend UID is required" });
+  }
+
+  try {
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userData = userDoc.data();
+
+    return res.status(200).json({ profile: userData });
+
+  } catch (error) {
+    console.error("Error fetching friend profile:", error);
+    return res.status(500).json({ message: "Error fetching friend profile", error: error.message });
+  }
+};
+
+
+
 
 module.exports = {
-  updateUserProfile,deleteUserProfile,sendFriendRequest,acceptFriendRequest,getFriends,getFriendSuggestions,getUserProfile
+  updateUserProfile, deleteUserProfile, 
+  sendFriendRequest, acceptFriendRequest,
+  getFriends, getFriendSuggestions,
+  getUserProfile, getFriendProfile
 }
 
 
