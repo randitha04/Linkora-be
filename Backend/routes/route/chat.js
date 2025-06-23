@@ -5,7 +5,7 @@ const router = express.Router();
 const {
   sendMessage,
   getMessages
-} = require("../../controllers/chatController");
+} = require("../../userController/chatController");
 
 
 

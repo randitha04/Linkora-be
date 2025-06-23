@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const profileController = require('../../controllers/userController');
+const profileController = require('../../userController/userController');
 const {verifyFirebaseToken} = require('../../middleware/authMiddleware');
+
 
 
 
