@@ -1,7 +1,39 @@
 const { db, admin } = require('../config/firebaseConfig');
 
+
+
+const getAllCollaborations = async (req, res) => {
+  try {
+    const collaborationsSnapshot = await db.collection("collaborations").get();
+
+    if (collaborationsSnapshot.empty) {
+      return res.status(200).json({
+        message: "No collaborations found.",
+        collaborations: [],
+      });
+    }
+
+    const collaborations = collaborationsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return res.status(200).json({
+      message: "Collaborations fetched successfully.",
+      collaborations,
+    });
+
+  } catch (error) {
+    console.error("Error fetching collaborations:", error);
+    return res.status(500).json({
+      message: "Failed to fetch collaborations.",
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
 const createCollaboration = async (req, res) => {
-  const {collaborationId, title, description, tags, createdBy, users } = req.body;
+  const {uid, title, description, tags, createdBy, users } = req.body;
 
 
   if (!title || !description || !createdBy) {
@@ -13,14 +45,13 @@ const createCollaboration = async (req, res) => {
   try {
   
     const collaboration = {
-      collaborationId,
+        uid,
       title,
       description,
       tags: tags || [],
       createdBy,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       users: users || [], 
-      collaborationState:'pending'
     };
 
     const docRef = await db.collection("collaborations").add(collaboration);
@@ -42,7 +73,7 @@ const createCollaboration = async (req, res) => {
 
 
 const updateCollaboration = async (req, res) => {
-  const { collaborationId } = req.query;
+  const { collaborationId } = req.params;
   const { title, description, tags, users } = req.body;
 
   if (!collaborationId) {
@@ -78,42 +109,6 @@ const updateCollaboration = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-const getAllCollaboration = async (req, res) => {
-  try {
-    const snapshot = await db.collection("collaborations").orderBy("createdAt", "desc").get();
-
-    if (snapshot.empty) {
-      return res.status(200).json({
-        message: "No collaborations found.",
-        collaborations: [],
-      });
-    }
-
-    const collaborations = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return res.status(200).json({
-      message: "Collaborations retrieved successfully.",
-      collaborations,
-    });
-    
-  } catch (error) {
-    console.error("Error getting collaborations:", error);
-    return res.status(500).json({
-      message: "Failed to retrieve collaborations.",
-      error: error.message || "Unknown error",
-    });
-  }
-};
-
 
 
 
@@ -161,9 +156,8 @@ const addUserToCollaboration = async (req, res) => {
   }
 };
 
-
 const deleteCollaboration = async (req, res) => {
-  const { collaborationId } = req.query;
+  const { collaborationId } = req.params;
 
   if (!collaborationId) {
     return res.status(400).json({ message: "Collaboration ID is required." });
@@ -171,9 +165,9 @@ const deleteCollaboration = async (req, res) => {
 
   try {
     const collabRef = db.collection("collaborations").doc(collaborationId);
-    const collabSnap = await collabRef.get();
+    const doc = await collabRef.get();
 
-    if (!collabSnap.exists) {
+    if (!doc.exists) {
       return res.status(404).json({ message: "Collaboration not found." });
     }
 
@@ -182,7 +176,6 @@ const deleteCollaboration = async (req, res) => {
     return res.status(200).json({
       message: "Collaboration deleted successfully.",
     });
-
   } catch (error) {
     console.error("Error deleting collaboration:", error);
     return res.status(500).json({
@@ -193,17 +186,62 @@ const deleteCollaboration = async (req, res) => {
 };
 
 
+const respondToCollaboration = async (req, res) => {
+  const { collaborationId } = req.params;
+  const { userId, response } = req.body; 
 
+  if (!userId || !response) {
+    return res.status(400).json({ message: "User ID and response are required." });
+  }
 
+  if (!['accepted', 'declined'].includes(response)) {
+    return res.status(400).json({ message: "Invalid response. Must be 'accepted' or 'declined'." });
+  }
 
+  try {
+    const collabRef = db.collection("collaborations").doc(collaborationId);
+    const collabDoc = await collabRef.get();
 
+    if (!collabDoc.exists) {
+      return res.status(404).json({ message: "Collaboration not found." });
+    }
 
+    const collaborationData = collabDoc.data();
+    const users = collaborationData.users || [];
+
+    const userIndex = users.findIndex(u => u.uid === userId && u.status === 'pending');
+
+    if (userIndex === -1) {
+      return res.status(404).json({ message: "Pending invitation for this user not found." });
+    }
+
+    if (response === 'accepted') {
+      users[userIndex].status = 'accepted';
+    } else { // 'declined'
+      // Remove the user from the array if they decline
+      users.splice(userIndex, 1);
+    }
+
+    await collabRef.update({ users });
+
+    return res.status(200).json({
+      message: `Collaboration invitation ${response} successfully.`,
+    });
+  } catch (error) {
+    console.error("Error responding to collaboration:", error);
+    return res.status(500).json({
+      message: "Failed to respond to collaboration.",
+      error: error.message || "Unknown error",
+    });
+  }
+};
 
 
 module.exports = {
   createCollaboration,
   addUserToCollaboration,
   updateCollaboration,
-  getAllCollaboration,
-  deleteCollaboration
+  getAllCollaborations,
+  deleteCollaboration,
+  respondToCollaboration,
 };
