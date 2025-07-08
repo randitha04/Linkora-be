@@ -51,7 +51,8 @@ const createCollaboration = async (req, res) => {
       tags: tags || [],
       createdBy,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      users: users || [], 
+      users: users || [],
+      status: "pending",
     };
 
     const docRef = await db.collection("collaborations").add(collaboration);
@@ -69,7 +70,6 @@ const createCollaboration = async (req, res) => {
     });
   }
 };
-
 
 
 const updateCollaboration = async (req, res) => {

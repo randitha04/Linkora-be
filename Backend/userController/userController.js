@@ -1,9 +1,6 @@
 const { db, admin } = require('../config/firebaseConfig');
 
 
-
-
-
 const getUserProfile = async (req, res) => {
   const { uid } = req.query;
   if (!uid) {

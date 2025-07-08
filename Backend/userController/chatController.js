@@ -4,7 +4,7 @@ const createChatId = (uid1, uid2) => {
   return [uid1, uid2].sort().join("_");
 };
 
-//  Send a message
+
 const sendMessage = async (req, res) => {
   const { senderUid, receiverUid, text } = req.body;
   if (!senderUid || !receiverUid || !text) {
@@ -32,8 +32,6 @@ const sendMessage = async (req, res) => {
     res.status(500).json({ message: "Error sending message", error: error.message });
   }
 };
-
-//  Get messages between two users
 const getMessages = async (req, res) => {
   const { uid1, uid2 } = req.params;
   const chatId = createChatId(uid1, uid2);

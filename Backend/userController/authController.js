@@ -51,6 +51,7 @@ const registerUser = async (req, res) => {
       abilities: "",
       role: "user",
       register_state: true,
+      profile_state:'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -63,7 +64,7 @@ const registerUser = async (req, res) => {
       name,
       role: "user",
       register_state: true,
-      Approve_sate: true
+      profile_state:'pending'
     });
 
   } catch (error) {
@@ -74,11 +75,6 @@ const registerUser = async (req, res) => {
     });
   }
 };
-
-
-
-
-
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
