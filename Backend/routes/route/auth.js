@@ -7,6 +7,10 @@ const authController = require('../../userController/authController');
 router.post("/signup", authController.registerUser);
 router.post("/login", authController.loginUser);
 
+
+// Refresh token
+// router.post("/refresh-token", authController.refreshToken);
+
 // Signout (optional: client-side mostly)
 router.post("/signout", (req, res) => {
   // Firebase handles signout client-side, but you can invalidate token or just respond

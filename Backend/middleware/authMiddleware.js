@@ -1,16 +1,16 @@
-const { adminAuth } = require('../config/firebaseConfig');
+const { admin } = require('../config/firebaseConfig');
 
 const verifyFirebaseToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Please provide a valid Bearer token in the Authorization header' });
+  const { idToken } = req.cookies;
+  console.log('token',req.cookies);
+  if (!idToken) {
+    return res.status(401).json({ message: 'No token provided. Unauthorized.' });
   }
 
-  const token = authHeader.split(' ')[1];
+
 
   try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
     next();
   } catch (error) {

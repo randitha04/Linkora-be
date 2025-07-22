@@ -1,34 +1,83 @@
 const { db, admin } = require('../config/firebaseConfig');
 
+// import or require your model function
+const { createUserModel } = require("../model/user");  // adjust path as needed
+
+const { cloudinary } = require("../utils/cloudinary");
+
 
 const getUserProfile = async (req, res) => {
-  const { uid } = req.query;
-  if (!uid) {
-    return res.status(400).json({ message: "User ID (uid) is required" });
+  if (!req.user || !req.user.uid) {
+    return res.status(401).json({ message: "Unauthorized: User ID not found in token" });
   }
+
   try {
+    const uid = req.user.uid;
     const userRef = db.collection("users").doc(uid);
     const userDoc = await userRef.get();
+
     if (!userDoc.exists) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userData = userDoc.data();
+
+   const userData = userDoc.data();
+
+  // 🖼️ Upload profilePicture to Cloudinary if it's a base64 string
+const profilePicture = userData.profilePicture;
+let uploadedProfilePicture = profilePicture || null;
+
+if (profilePicture && profilePicture.startsWith("data:image")) {
+  const uploadResponse = await cloudinary.uploader.upload(profilePicture, {
+    folder: "linkora/profile_pictures",
+    public_id: `user_${uid}`,
+    overwrite: true,
+  });
+  uploadedProfilePicture = uploadResponse.secure_url;
+} else if (profilePicture && profilePicture.startsWith("http")) {
+  uploadedProfilePicture = profilePicture; // already hosted image
+}
+
+
+    // Use the model function to create a clean, normalized user object
+    const userProfile = createUserModel({
+      uid,
+      email: userData.email,
+      nickname: userData.nickname,
+      fullName: userData.name || userData.fullName,
+      profilePicture: uploadedProfilePicture || "/Backend/assest/nopic.jpg",
+      relationshipState: userData.relationshipStatus,
+      location: userData.location,
+      joinDate: userData.joinDate,
+      profileCompleteness: userData.profileCompleteness,
+
+      university: userData.university || {
+        name: userData.universityName,
+        faculty: userData.facultyName,
+        degree: userData.degreeName,
+        positions: userData.university?.positions || "",
+      },
+
+      professional: userData.professional || {},
+
+      personality: {
+        hobbies: userData.personality?.hobbies || [],
+        talents: userData.personality?.talents || [],
+      },
+
+      socialLinks: userData.socialLinks || {},
+
+      activity: userData.activity || {},
+
+      interests: userData.interests,
+      achievements: userData.personality?.achievements || userData.achievements,
+      abilities: userData.abilities,
+      skills: userData.skills,
+    })
+
     return res.status(200).json({
       message: "User profile fetched successfully",
-      profile: {
-        uid,
-        universityName: userData.universityName || "",
-        facultyName: userData.facultyName || "",
-        degreeName: userData.degreeName || "",
-        universityYear: userData.universityYear || "",
-        relationshipState: userData.relationshipState || "",
-        whoAmI: userData.whoAmI || "",
-        interests: userData.interests || "",
-        achievements: userData.achievements || "",
-        abilities: userData.abilities || "",
-        updatedAt: userData.updatedAt || null,
-      }
-    });
+      profile: userProfile,
+    })
   } catch (error) {
     console.error("Get profile error:", error);
     return res.status(500).json({
@@ -36,48 +85,100 @@ const getUserProfile = async (req, res) => {
       error: error.message || "Unknown error",
     });
   }
-};
+}
 
 
 const updateUserProfile = async (req, res) => {
-  const {
-    uid,
-    universityName,
-    facultyName,
-    degreeName,
-    universityYear,
-    relationshipState,
-    whoAmI,
-    interests,
-    achievements,
-    abilities,
-  } = req.body;
-
-  if (!uid) {
-    return res.status(400).json({ message: "User ID (uid) is required" });
+  if (!req.user || !req.user.uid) {
+    return res.status(401).json({ message: "Unauthorized: User ID not found in token" });
   }
+
+  const uid = req.user.uid;
+
+  const {
+    nickname,
+    fullName,
+    degreeCard,
+    profilePicture,
+    relationshipStatus,
+    location,
+    profileCompleteness,
+
+    university = {},
+    professional = {},
+    personality = {},
+    socialLinks = {},
+    activity = {}
+  } = req.body;
 
   try {
     const userRef = db.collection("users").doc(uid);
     const userDoc = await userRef.get();
-
+    console.log("pic",profilePicture);
     if (!userDoc.exists) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update fields
-    await userRef.update({
-      universityName: universityName || "",
-      facultyName: facultyName || "",
-      degreeName: degreeName || "",
-      universityYear: universityYear || "",
-      relationshipState: relationshipState || "",
-      whoAmI: whoAmI || "",
-      interests: interests || "",
-      achievements: achievements || "",
-      abilities: abilities || "",
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+     //  Upload image to Cloudinary if base64
+    let finalProfilePicture = "/profile_Pic/nopic.jpg"; 
+    if (profilePicture && profilePicture.startsWith("data:image")) {
+      const uploadResult = await cloudinary.uploader.upload(profilePicture, {
+        folder: "linkora/profile_photos",
+        public_id: `user_${uid}`,
+        overwrite: true,
+      });
+      finalProfilePicture = uploadResult.secure_url;
+    } else if (profilePicture && profilePicture.startsWith("http")) {
+      finalProfilePicture = profilePicture; 
+    }
+
+    const updateData = {
+      nickname: nickname || "",
+      name: fullName || "",
+      degreeCard: degreeCard || "",
+      profilePicture: finalProfilePicture ,
+      relationshipStatus: relationshipStatus || "",
+      location: location || "",
+      profileCompleteness: profileCompleteness || 0,
+
+      university: {
+        name: university.name || "",
+        faculty: university.faculty || "",
+        degree: university.degree || "",
+        positions: university.positions || ""
+      },
+
+      professional: {
+        currentJobs: professional.currentJobs || "",
+        societyPositions: professional.societyPositions || "",
+        workWithPeople: professional.workWithPeople || "",
+        beAroundPeople: professional.beAroundPeople || ""
+      },
+
+      personality: {
+        hobbies: personality.hobbies || [],
+        talents: personality.talents || [],
+        achievements: personality.achievements || ""
+      },
+
+      socialLinks: {
+        website: socialLinks.website || "",
+        github: socialLinks.github || "",
+        linkedin: socialLinks.linkedin || "",
+        twitter: socialLinks.twitter || "",
+        instagram: socialLinks.instagram || ""
+      },
+
+      activity: {
+        posts: activity.posts || 0,
+        collaborations: activity.collaborations || 0,
+        connections: activity.connections || 0
+      },
+
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    await userRef.update(updateData);
 
     return res.status(200).json({ message: "Profile updated successfully" });
 
@@ -85,7 +186,7 @@ const updateUserProfile = async (req, res) => {
     console.error("Update profile error:", error);
     return res.status(500).json({
       message: "Failed to update profile",
-      error: error.message || "Unknown error",
+      error: error.message || "Unknown error"
     });
   }
 };
@@ -193,31 +294,29 @@ const acceptFriendRequest = async (req, res) => {
 
 
 const getFriends = async (req, res) => {
-  const { uid } = req.query;
+  const uid = req.user?.uid; // make sure user is coming from auth middleware
+
+  console.log('use', uid);
+
+  if (!uid) {
+    return res.status(400).json({ message: "Missing UID in request." });
+  }
 
   try {
-    const friendsSnapshot = await db.collection("Friends")
-      .where("status", "==", "accepted")
-      .where("fromUid", "in", [uid])
-      .get();
+    const usersSnapshot = await db.collection("users").get();
 
-    const reverseFriendsSnapshot = await db.collection("Friends")
-      .where("status", "==", "accepted")
-      .where("toUid", "in", [uid])
-      .get();
+    const allUsers = usersSnapshot.docs
+      .map(doc => ({ uid: doc.id, ...doc.data() }))
+      .filter(user => user.uid !== uid); // ✅ exclude current user
 
-    const friends = [
-      ...friendsSnapshot.docs.map(doc => doc.data()),
-      ...reverseFriendsSnapshot.docs.map(doc => doc.data())
-    ];
-
-    return res.status(200).json({ friends });
+    return res.status(200).json({ friends: allUsers });
 
   } catch (error) {
-    console.error("Fetch friends error:", error);
-    return res.status(500).json({ message: "Error fetching friends", error: error.message });
+    console.error("Fetch users error:", error);
+    return res.status(500).json({ message: "Error fetching users", error: error.message });
   }
 };
+
 
 
 const getFriendSuggestions = async (req, res) => {
@@ -292,9 +391,9 @@ const getFriendSuggestions = async (req, res) => {
 };
 
 const getFriendProfile = async (req, res) => {
-  const { uid } = req.query;
+  const { user } = req.query;
 
-  if (!uid) {
+  if (!user) {
     return res.status(400).json({ message: "Friend UID is required" });
   }
 
@@ -322,9 +421,5 @@ const getFriendProfile = async (req, res) => {
 module.exports = {
   updateUserProfile, deleteUserProfile, 
   sendFriendRequest, acceptFriendRequest,
-  getFriends, getFriendSuggestions,
-  getUserProfile, getFriendProfile
+  getFriends, getFriendSuggestions, getUserProfile, getFriendProfile
 }
-
-
-
