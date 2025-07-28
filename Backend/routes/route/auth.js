@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-const authController = require('../../controllers/authController');
+const authController = require('../../userController/authController');
 
 // Register with email/password
 router.post("/signup", authController.registerUser);
 router.post("/login", authController.loginUser);
+
+
+// Refresh token
+router.post("/refresh-token", authController.refreshToken);
 
 // Signout (optional: client-side mostly)
 router.post("/signout", (req, res) => {

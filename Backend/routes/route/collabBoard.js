@@ -2,21 +2,24 @@
 const express = require("express");
 const router = express.Router();
 
-const collabController = require('../../controllers/collabController');
+const collabController = require('../../userController/collabController');
 
 // Create a new collaboration
 router.post("/", collabController.createCollaboration);
 
-// Get all collaborations (placeholder, implement handler if needed)
-router.get("/", (req, res) => res.status(501).json({ message: "Not implemented" }));
+// Get all collaborations
+router.get("/", collabController.getAllCollaborations);
+
+// Add a user to a collaboration
+router.post("/add-user", collabController.addUserToCollaboration);
 
 // Update a collaboration
-router.put("/:id", collabController.updateCollaboration);
+router.put("/:collaborationId", collabController.updateCollaboration);
 
-// Delete a collaboration (placeholder, implement handler if needed)
-router.delete("/:id", (req, res) => res.status(501).json({ message: "Not implemented" }));
+// Delete a collaboration
+router.delete("/:collaborationId", collabController.deleteCollaboration);
 
-// Respond to a collaboration (placeholder, implement handler if needed)
-router.post("/:id/respond", (req, res) => res.status(501).json({ message: "Not implemented" }));
+// Respond to a collaboration
+router.post("/:collaborationId/respond", collabController.respondToCollaboration);
 
 module.exports = router;
