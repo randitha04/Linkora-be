@@ -3,7 +3,7 @@ const { db, admin } = require('../config/firebaseConfig');
 // import or require your model function
 const { createUserModel } = require("../model/user");  // adjust path as needed
 
-const { cloudinary } = require("../utils/cloudinary");
+const  cloudinary  = require("../utils/cloudinary");
 
 
 const getUserProfile = async (req, res) => {
@@ -21,30 +21,18 @@ const getUserProfile = async (req, res) => {
     }
 
    const userData = userDoc.data();
+   
 
-  // 🖼️ Upload profilePicture to Cloudinary if it's a base64 string
-const profilePicture = userData.profilePicture;
-let uploadedProfilePicture = profilePicture || null;
 
-if (profilePicture && profilePicture.startsWith("data:image")) {
-  const uploadResponse = await cloudinary.uploader.upload(profilePicture, {
-    folder: "linkora/profile_pictures",
-    public_id: `user_${uid}`,
-    overwrite: true,
-  });
-  uploadedProfilePicture = uploadResponse.secure_url;
-} else if (profilePicture && profilePicture.startsWith("http")) {
-  uploadedProfilePicture = profilePicture; // already hosted image
-}
 
 
     // Use the model function to create a clean, normalized user object
     const userProfile = createUserModel({
       uid,
       email: userData.email,
-      nickname: userData.nickname,
+      degreeCard: userData.degreeCard,
       fullName: userData.name || userData.fullName,
-      profilePicture: uploadedProfilePicture || "/Backend/assest/nopic.jpg",
+      profilePicture: userData.profilePicture || "/Backend/assest/nopic.jpg",
       relationshipState: userData.relationshipStatus,
       location: userData.location,
       joinDate: userData.joinDate,
@@ -54,7 +42,8 @@ if (profilePicture && profilePicture.startsWith("data:image")) {
         name: userData.universityName,
         faculty: userData.facultyName,
         degree: userData.degreeName,
-        positions: userData.university?.positions || "",
+        positions: userData.positions || "",
+        universityYear: userData.universityYear || ""
       },
 
       professional: userData.professional || {},
@@ -100,44 +89,45 @@ const updateUserProfile = async (req, res) => {
     fullName,
     degreeCard,
     profilePicture,
-    relationshipStatus,
+    relationshipState,
     location,
     profileCompleteness,
-
     university = {},
     professional = {},
     personality = {},
     socialLinks = {},
     activity = {}
   } = req.body;
-
+  console.log(req.body)
   try {
     const userRef = db.collection("users").doc(uid);
     const userDoc = await userRef.get();
-    console.log("pic",profilePicture);
     if (!userDoc.exists) {
       return res.status(404).json({ message: "User not found" });
     }
+    
 
-     //  Upload image to Cloudinary if base64
-    let finalProfilePicture = "/profile_Pic/nopic.jpg"; 
-    if (profilePicture && profilePicture.startsWith("data:image")) {
+     // Upload to Cloudinary if it's a base64 image
+    let finalProfilePicture = userDoc.data().profilePicture || "/profile_Pic/nopic.jpg";
+
+    if (profilePicture?.startsWith("data:image")) {
       const uploadResult = await cloudinary.uploader.upload(profilePicture, {
         folder: "linkora/profile_photos",
         public_id: `user_${uid}`,
         overwrite: true,
       });
       finalProfilePicture = uploadResult.secure_url;
-    } else if (profilePicture && profilePicture.startsWith("http")) {
-      finalProfilePicture = profilePicture; 
+    } else if (profilePicture?.startsWith("http")) {
+      finalProfilePicture = profilePicture;
     }
+  
 
     const updateData = {
       nickname: nickname || "",
       name: fullName || "",
       degreeCard: degreeCard || "",
       profilePicture: finalProfilePicture ,
-      relationshipStatus: relationshipStatus || "",
+      relationshipStatus: relationshipState || "",
       location: location || "",
       profileCompleteness: profileCompleteness || 0,
 
@@ -145,7 +135,9 @@ const updateUserProfile = async (req, res) => {
         name: university.name || "",
         faculty: university.faculty || "",
         degree: university.degree || "",
-        positions: university.positions || ""
+        positions: university.positions || "",
+        universityYear: university.universityYear || ""
+
       },
 
       professional: {

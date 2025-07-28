@@ -9,7 +9,7 @@ router.post("/login", authController.loginUser);
 
 
 // Refresh token
-// router.post("/refresh-token", authController.refreshToken);
+router.post("/refresh-token", authController.refreshToken);
 
 // Signout (optional: client-side mostly)
 router.post("/signout", (req, res) => {

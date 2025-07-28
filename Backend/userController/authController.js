@@ -157,48 +157,35 @@ const loginUser = async (req, res) => {
 
 
 const refreshToken = async (req, res) => {
-  // To read cookies from the request, you need to use the cookie-parser middleware.
-  // I'll explain how to add it in the next step.
-  const token = req.cookies.idToken;
+  console.log("Refresh Token Requested from frontend");
+
+  const token = req.headers.authorization?.split("Bearer ")[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'Refresh token not found in cookies.' });
+    return res.status(401).json({ message: "No token provided." });
   }
 
   try {
-    const firebaseApiKey = process.env.FIREBASEAPIKEY;
-    const response = await axios.post(
-      `https://securetoken.googleapis.com/v1/token?key=${firebaseApiKey}`,
-      {
-        grant_type: 'refresh_token',
-        refresh_token: token,
-      }
-    );
+    const decoded = await admin.auth().verifyIdToken(token);
 
-    const { id_token: newIdToken } = response.data;
-    console.log('refreshed token')
-
-    res.cookie('idToken', newIdToken, {
+    // Set new ID token as cookie
+    res.cookie("idToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
     });
 
-    return res.status(200).json({ message: 'Token refreshed successfully.' });
-  } catch (error) {
-    const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error';
-    console.error('Token refresh error:', errorMessage);
+    console.log(" Token updated successfully via frontend refresh.");
+    return res.status(200).json({ message: "Token updated." });
 
-    // Clear potentially invalid cookies
-    res.clearCookie('refreshToken');
-    res.clearCookie('idToken');
+  } catch (err) {
+    console.error("Error verifying token:", err.message);
 
-    return res.status(401).json({
-      message: 'Failed to refresh token. Please log in again.',
-      error: errorMessage,
-    });
+    res.clearCookie("idToken");
+    return res.status(401).json({ message: "Invalid or expired token." });
   }
 };
+
 
 
 module.exports = { 

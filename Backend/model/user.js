@@ -11,7 +11,6 @@ function createUserModel(data) {
   return {
     uid: data.uid,
     fullName: data.fullName,
-    nickname: data.nickname || null,
     degreeCard: data.degreeCard || null,
     profilePicture: data.profilePicture || null,
     email: data.email || null,
@@ -22,11 +21,8 @@ function createUserModel(data) {
       faculty: data.university?.faculty || null,
       degree: data.university?.degree || null,
       positions: data.university?.positions || null,
+      universityYear: data.universityYear || null,
     },
-    universityName: data.universityName || null,
-    facultyName: data.facultyName || null,
-    degreeName: data.degreeName || null,
-    universityYear: data.universityYear || null,
 
     whoAmI: data.whoAmI || null,
     relationshipState: data.relationshipState || null,
