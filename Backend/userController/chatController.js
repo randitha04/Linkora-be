@@ -1,61 +1,82 @@
 const { db } = require('../config/firebaseConfig');
+const { StreamChat } = require('stream-chat')
+
+const apiKey = process.env.STREAM_API_KEY
+const apiSecret = process.env.STREAM_API_SECRET
+const chatClient = StreamChat.getInstance(apiKey, apiSecret)
 
 const createChatId = (uid1, uid2) => {
   return [uid1, uid2].sort().join("_");
 };
 
 
-const sendMessage = async (req, res) => {
-  const { senderUid, receiverUid, text } = req.body;
-  if (!senderUid || !receiverUid || !text) {
-    return res.status(400).json({ message: "Missing fields" });
-  }
 
-  const chatId = createChatId(senderUid, receiverUid);
-  const chatRef = db.collection("Chats").doc(chatId);
-
+// Express or Next.js API handler
+const getAllUsers = async (req, res) => {
   try {
-    const chatDoc = await chatRef.get();
-    if (!chatDoc.exists) {
-      await chatRef.set({ users: [senderUid, receiverUid] });
+    const usersSnapshot = await db.collection("users").get();
+    const users = usersSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.fullName || '',
+        image: data.profilePicture|| '',
+        streamUserId: data.streamUserId || doc.id,
+      };
+    });
+    console.log('Fetched users:', users);
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return res.status(500).json({ error: 'Failed to fetch users' });
+  }
+};
+
+
+const getStreamChatToken = async (req, res) => {
+  try {
+    const userId = req.body?.userId || req.query?.user_id;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required.' });
     }
 
-    const message = {
-      senderUid,
-      text,
-      timestamp: new Date()
-    };
-
-    await chatRef.collection("messages").add(message);
-    res.status(200).json({ message: "Message sent", chatId });
+    const token = chatClient.createToken(userId);
+    return res.status(200).json({ token });
   } catch (error) {
-    res.status(500).json({ message: "Error sending message", error: error.message });
+    console.error('[Token Error]', error);
+    return res.status(500).json({ error: 'Could not generate token' });
   }
 };
-const getMessages = async (req, res) => {
-  const { uid1, uid2 } = req.params;
-  const chatId = createChatId(uid1, uid2);
 
-  try {
-    const messagesSnapshot = await db
-      .collection("Chats")
-      .doc(chatId)
-      .collection("messages")
-      .orderBy("timestamp")
-      .get();
 
-    const messages = messagesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+// POST /api/start-channel
+const startChannel = async (req, res) => {
+  const { userA, userB } = JSON.parse(req.body);
 
-    res.status(200).json({ chatId, messages });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching messages", error: error.message });
-  }
+  if (!userA || !userB) return res.status(400).json({ error: 'Missing user' });
+
+  const channelId = [userA, userB].sort().join('-');
+  const channel = chatClient.channel('messaging', channelId, {
+    members: [userA, userB],
+  });
+
+  await channel.create();
+  res.json({ channelId });
 };
+
+
+
+
+
+
+
+
 
 module.exports = {
-  sendMessage,
-  getMessages
+
+  getStreamChatToken,
+  getAllUsers,
+  startChannel
+  
 };

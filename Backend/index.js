@@ -6,20 +6,41 @@ const app = express();
 
 const routers = require('./routes/main.router')
 
+const ensureAdminUser = require('./userController/admin/adminRole');
 
-app.use(cors({origin: "http://localhost:3000",  credentials: true, })); 
+
+
+const allowedOrigins = ["https://linkora-frontend.vercel.app","https://linkora-frontend-l3vuzaomr-atgayans-projects.vercel.app","http://localhost:3000"];
+
+//  Comprehensive CORS configuration
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }, 
+  credentials: true
+}));
+
+
 app.use(cookieParser());
-
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-
 // routes
 app.use("/api/v1", routers);
+
+// Ensure admin user is created and role set on server start
+ensureAdminUser();
+console.log("Admin user ensured.");
+
 
 
 // listen
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Allowed origins:`, allowedOrigins);
 });

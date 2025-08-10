@@ -8,93 +8,79 @@ const { createUserModel } = require('../model/user');
 
 const registerUser = async (req, res) => {
   const token = req.headers.authorization?.split("Bearer ")[1];
+  const userObject = req.body.userObject || {};
+
+  // Destructure only top-level props (deep props go inside nested objects)
   const {
     uid,
     email,
     fullName,
-    nickname,
     relationshipStatus,
     location,
     joinDate,
     profileCompleteness,
-    university,
-    professional,
-    personality,
-    socialLinks,
-    activity,
-    universityName,
-    facultyName,
-    degreeName,
-    universityYear,
-    whoAmI,
-    interests,
-    achievements,
-    abilities,
-    skills,
     profilePicture,
-  } = req.body.userObject;
+    degreeCard,
+    bannerImage,
+    university,    // expected to be an object
+    professional,  // expected to be an object
+    personality,   // expected to be an object
+    activity,      // expected to be an object
+    socialLinks,   // note: your model uses socialPreferences, not socialLinks, fix accordingly
+  } = userObject;
 
-  // Input Validation
-  console.log(req.body.userObject);
+  // Basic validation
   if (!token || !uid || !email || !fullName || !university) {
     return res.status(400).json({ message: "Missing required data" });
   }
 
   try {
-    // Verify Firebase ID Token
+    // Verify Firebase token
     const decoded = await admin.auth().verifyIdToken(token);
     if (decoded.uid !== uid) {
       return res.status(401).json({ message: "Invalid user ID in token" });
     }
 
-    // Check if user already exists
+    // Check for existing user
     const existingUser = await db.collection("users").doc(uid).get();
     if (existingUser.exists) {
       return res.status(409).json({ message: "User already registered" });
     }
 
-    // Prepare user object using model
+    // Prepare user data using model
     const userData = createUserModel({
       uid,
       fullName,
-      nickname,
+      degreeCard,
+      profilePicture,
+      bannerImage,
       email,
       profileCompleteness,
       university,
-      universityName,
-      facultyName,
-      degreeName,
-      universityYear,
-      whoAmI,
+      whoAmI: userObject.whoAmI,
       relationshipState: relationshipStatus,
       location,
       joinDate,
       personality,
       professional,
-      socialLinks,
+      socialPreferences: socialLinks, 
       activity,
-      interests,
-      achievements,
-      abilities,
-      skills,
-      profilePicture,
     });
 
-    // Add system-level metadata
+    // Add additional system-level metadata
     userData.role = "user";
     userData.register_state = true;
     userData.profile_state = "pending";
     userData.createdAt = admin.firestore.FieldValue.serverTimestamp();
 
-    // Save to Firestore
+    // Save user data in Firestore
     await db.collection("users").doc(uid).set(userData);
-    console.log("User registered in Firestore");
 
-    // Set HttpOnly Cookie
+    // Set HttpOnly cookie with token
     res.cookie("idToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: true,
+      sameSite: "None",
     });
 
     return res.status(201).json({ message: "User profile saved" });
@@ -136,8 +122,9 @@ const loginUser = async (req, res) => {
     //  Set secure cookies
     res.cookie("idToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: true,
+      sameSite: "None",
+
     });
 
     //  Send back user data
@@ -160,7 +147,6 @@ const refreshToken = async (req, res) => {
   console.log("Refresh Token Requested from frontend");
 
   const token = req.headers.authorization?.split("Bearer ")[1];
-
   if (!token) {
     return res.status(401).json({ message: "No token provided." });
   }
@@ -171,8 +157,10 @@ const refreshToken = async (req, res) => {
     // Set new ID token as cookie
     res.cookie("idToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: true,
+      sameSite: "None",
+
+
     });
 
     console.log(" Token updated successfully via frontend refresh.");
