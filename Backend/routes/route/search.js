@@ -1,8 +1,8 @@
-const express = require("express");
-const router = express.Router();
+// const express = require("express");
+// const router = express.Router();
 
-router.get("/users", null);
-router.get("/posts", null);
-router.get("/collabs", null);
+// router.get("/users", null);
+// router.get("/posts", null);
+// router.get("/collabs", null);
 
-module.exports = router;
+// module.exports = router;

@@ -7,12 +7,15 @@
  * @param {Object} data - User data to create a user object
  * @returns {Object} user object
  */
+// models/userModel.js
+
 function createUserModel(data) {
   return {
     uid: data.uid,
     fullName: data.fullName,
     degreeCard: data.degreeCard || null,
     profilePicture: data.profilePicture || null,
+    bannerImage: data.bannerImage || null,
     email: data.email || null,
     profileCompleteness: data.profileCompleteness || 0,
 
@@ -21,24 +24,22 @@ function createUserModel(data) {
       faculty: data.university?.faculty || null,
       degree: data.university?.degree || null,
       positions: data.university?.positions || null,
-      universityYear: data.universityYear || null,
+      universityYear: data.university?.universityYear || null,
     },
-
-    whoAmI: data.whoAmI || null,
     relationshipState: data.relationshipState || null,
-    location: data.location || null,
-    joinDate: data.joinDate || null,
-
+      
+     socialPreferences: {
+  workWithPeople: data.socialPreferences?.workWithPeople || "",
+  beAroundPeople: data.socialPreferences?.beAroundPeople || "",
+},
     personality: {
       hobbies: data.personality?.hobbies || [],
-      talents: data.personality?.talents || [],
-    },
-
-    professional: {
-      currentJobs: data.professional?.currentJobs || null,
-      societyPositions: data.professional?.societyPositions || null,
-      workWithPeople: data.professional?.workWithPeople || null,
-      beAroundPeople: data.professional?.beAroundPeople || null,
+      interests: data.personality?.interests || null,
+      achievements: data.personality?.achievements || null,
+      abilities: data.personality?.abilities || null,
+      skills: data.personality?.skills || [],
+      type: data.personality?.type || "",
+      whoAmI: data.personality?.whoAmI || null,
     },
 
     activity: {
@@ -47,20 +48,13 @@ function createUserModel(data) {
       connections: data.activity?.connections || 0,
     },
 
-    socialLinks: {
-      github: data.socialLinks?.github || null,
-      linkedin: data.socialLinks?.linkedin || null,
-      twitter: data.socialLinks?.twitter || null,
-      instagram: data.socialLinks?.instagram || null,
-      facebook: data.socialLinks?.facebook || null,
-      personalWebsite: data.socialLinks?.personalWebsite || null,
-    },
-
-    interests: data.interests || null,
-    achievements: data.achievements || null,
-    abilities: data.abilities || null,
-    skills: data.skills || [],
-  }
+    role: data.role || "user",
+    register_state: data.register_state || false,
+    userquality: data.userquality || "good",
+  
+  };
 }
+
+
 
 module.exports = { createUserModel }

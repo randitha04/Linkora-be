@@ -1,18 +1,34 @@
+
+
+
+
+
 // routes/chatRoutes.js
 
 const express = require("express");
 const router = express.Router();
 const {
-  sendMessage,
-  getMessages
+  getAllUsers,
+  getStreamChatToken,
+  startChannel,
 } = require("../../userController/chatController");
+const { verifyFirebaseToken } = require('../../middleware/authMiddleware');
 
 
 
-//  Send message
-router.post("/rooms/message", sendMessage);
+// Get Stream chat token
 
-//  Get messages between two users
-router.get("/rooms/:uid1/:uid2/messages", getMessages);
+router.post('/token',verifyFirebaseToken, getStreamChatToken)
+
+// Get all users for chat
+router.get('/all-users', verifyFirebaseToken, getAllUsers)
+
+// Start a new chat channel
+router.post('/start-channel', verifyFirebaseToken, startChannel);
+
+
+
+
+
 
 module.exports = router;
