@@ -28,7 +28,7 @@ router.post("/accept-request",verifyFirebaseToken, profileController.acceptFrien
 router.get("/friends/",verifyFirebaseToken,profileController.getFriends);
 
 //Get friends profile
-router.get("/friends-profile/" ,verifyFirebaseToken, profileController.getFriendProfile);
+router.get("/friends-profile/:uid", verifyFirebaseToken, profileController.getFriendProfile);
 
 // // Get friend suggestions
 // router.get("/friend-suggestions/:uid", profileController.getFriendSuggestions);

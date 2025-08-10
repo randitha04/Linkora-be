@@ -20,53 +20,56 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-   const userData = userDoc.data();
-   
+    const userData = userDoc.data();
+    console.log('User data:', userData);
 
-
-
-
-    // Use the model function to create a clean, normalized user object
     const userProfile = createUserModel({
       uid,
       email: userData.email,
       degreeCard: userData.degreeCard,
       fullName: userData.name || userData.fullName,
       profilePicture: userData.profilePicture || "/Backend/assest/nopic.jpg",
-      relationshipState: userData.relationshipStatus,
+      bannerImage: userData.bannerImage || "",
+      relationshipState: userData.relationshipState || userData.relationshipStatus, 
       location: userData.location,
       joinDate: userData.joinDate,
       profileCompleteness: userData.profileCompleteness,
+      
+     socialPreferences: {
+  workWithPeople: userData.socialPreferences?.workWithPeople || "",
+  beAroundPeople: userData.socialPreferences?.beAroundPeople || "",
+},
+
 
       university: userData.university || {
-        name: userData.universityName,
-        faculty: userData.facultyName,
-        degree: userData.degreeName,
-        positions: userData.positions || "",
-        universityYear: userData.universityYear || ""
+        name: userData.universityName || null,
+        faculty: userData.facultyName || null,
+        degree: userData.degreeName || null,
+        positions: userData.positions || null,
+        universityYear: userData.universityYear || null,
       },
 
-      professional: userData.professional || {},
-
+    
       personality: {
         hobbies: userData.personality?.hobbies || [],
-        talents: userData.personality?.talents || [],
+        interests: userData.personality?.interests || null,
+        achievements: userData.personality?.achievements || [], 
+        abilities: userData.personality?.abilities || [],
+        skills: userData.personality?.skills || [],
+        type: userData.personality?.type || "",
+        whoAmI: userData.personality?.whoAmI || null,
+      }, 
+      activity: userData.activity || {
+        posts: 0,
       },
+    });
 
-      socialLinks: userData.socialLinks || {},
-
-      activity: userData.activity || {},
-
-      interests: userData.interests,
-      achievements: userData.personality?.achievements || userData.achievements,
-      abilities: userData.abilities,
-      skills: userData.skills,
-    })
-
+    console.log('User profile fetched:', userProfile);
     return res.status(200).json({
       message: "User profile fetched successfully",
-      profile: userProfile,
-    })
+      ...userProfile,
+    });
+
   } catch (error) {
     console.error("Get profile error:", error);
     return res.status(500).json({
@@ -74,8 +77,7 @@ const getUserProfile = async (req, res) => {
       error: error.message || "Unknown error",
     });
   }
-}
-
+};
 
 const updateUserProfile = async (req, res) => {
   if (!req.user || !req.user.uid) {
@@ -85,31 +87,29 @@ const updateUserProfile = async (req, res) => {
   const uid = req.user.uid;
 
   const {
-    nickname,
     fullName,
     degreeCard,
     profilePicture,
+    bannerImage,
     relationshipState,
-    location,
     profileCompleteness,
     university = {},
-    professional = {},
     personality = {},
-    socialLinks = {},
-    activity = {}
+    activity = {},
+    socialPreferences = {},
+    
+  
   } = req.body;
-  console.log(req.body)
+ console.log('update profile', req.body);
   try {
     const userRef = db.collection("users").doc(uid);
     const userDoc = await userRef.get();
     if (!userDoc.exists) {
       return res.status(404).json({ message: "User not found" });
     }
-    
 
-     // Upload to Cloudinary if it's a base64 image
+    // Upload profilePicture if base64
     let finalProfilePicture = userDoc.data().profilePicture || "/profile_Pic/nopic.jpg";
-
     if (profilePicture?.startsWith("data:image")) {
       const uploadResult = await cloudinary.uploader.upload(profilePicture, {
         folder: "linkora/profile_photos",
@@ -120,68 +120,77 @@ const updateUserProfile = async (req, res) => {
     } else if (profilePicture?.startsWith("http")) {
       finalProfilePicture = profilePicture;
     }
-  
 
-    const updateData = {
-      nickname: nickname || "",
-      name: fullName || "",
-      degreeCard: degreeCard || "",
-      profilePicture: finalProfilePicture ,
-      relationshipStatus: relationshipState || "",
-      location: location || "",
-      profileCompleteness: profileCompleteness || 0,
+    // Upload bannerImage if base64
+    let finalBannerImage = userDoc.data().bannerImage || "";
+    if (bannerImage?.startsWith("data:image")) {
+      const uploadResult = await cloudinary.uploader.upload(bannerImage, {
+        folder: "linkora/banner_images",
+        public_id: `banner_${uid}`,
+        overwrite: true,
+      });
+      finalBannerImage = uploadResult.secure_url;
+    } else if (bannerImage?.startsWith("http")) {
+      finalBannerImage = bannerImage;
+    }
 
-      university: {
-        name: university.name || "",
-        faculty: university.faculty || "",
-        degree: university.degree || "",
-        positions: university.positions || "",
-        universityYear: university.universityYear || ""
+  const updateData = {
+  uid: uid,  
+  fullName: fullName || "",
+  degreeCard: degreeCard || null,
+  profilePicture: finalProfilePicture || null,
+  bannerImage: finalBannerImage || null,                 
+  profileCompleteness: profileCompleteness || 0,
 
-      },
+  university: {
+    name: university?.name || null,
+    faculty: university?.faculty || null,
+    degree: university?.degree || null,
+    positions: university?.positions || null,
+    universityYear: university?.universityYear || null,
+  },
 
-      professional: {
-        currentJobs: professional.currentJobs || "",
-        societyPositions: professional.societyPositions || "",
-        workWithPeople: professional.workWithPeople || "",
-        beAroundPeople: professional.beAroundPeople || ""
-      },
+ 
+  relationshipState: relationshipState || null,
 
-      personality: {
-        hobbies: personality.hobbies || [],
-        talents: personality.talents || [],
-        achievements: personality.achievements || ""
-      },
+  personality: {
+    hobbies: personality?.hobbies || [],
+    interests: personality?.interests || null,
+    achievements: personality?.achievements || null,
+    abilities: personality?.abilities || null,
+    skills: personality?.skills || [],
+    type: personality?.type || "",
+    whoAmI: personality?.whoAmI || null,
+  },
 
-      socialLinks: {
-        website: socialLinks.website || "",
-        github: socialLinks.github || "",
-        linkedin: socialLinks.linkedin || "",
-        twitter: socialLinks.twitter || "",
-        instagram: socialLinks.instagram || ""
-      },
+  socialPreferences: {
+    workWithPeople: socialPreferences?.workWithPeople || "",
+    beAroundPeople: socialPreferences?.beAroundPeople || "",
+  },
 
-      activity: {
-        posts: activity.posts || 0,
-        collaborations: activity.collaborations || 0,
-        connections: activity.connections || 0
-      },
+  activity: {
+    posts: activity?.posts || 0,
+    collaborations: activity?.collaborations || 0,
+    connections: activity?.connections || 0,
+  },
 
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    };
+  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+};
+
 
     await userRef.update(updateData);
+    console.log('updatedata',updateData)
 
     return res.status(200).json({ message: "Profile updated successfully" });
-
   } catch (error) {
     console.error("Update profile error:", error);
     return res.status(500).json({
       message: "Failed to update profile",
-      error: error.message || "Unknown error"
+      error: error.message || "Unknown error",
     });
   }
 };
+
 
 
 const deleteUserProfile = async (req, res) => {
@@ -286,7 +295,7 @@ const acceptFriendRequest = async (req, res) => {
 
 
 const getFriends = async (req, res) => {
-  const uid = req.user?.uid; // make sure user is coming from auth middleware
+  const uid = req.user?.uid; 
 
   console.log('use', uid);
 
@@ -299,7 +308,7 @@ const getFriends = async (req, res) => {
 
     const allUsers = usersSnapshot.docs
       .map(doc => ({ uid: doc.id, ...doc.data() }))
-      .filter(user => user.uid !== uid); // ✅ exclude current user
+      .filter(user => user.uid !== uid); //  exclude current user
 
     return res.status(200).json({ friends: allUsers });
 
@@ -383,9 +392,10 @@ const getFriendSuggestions = async (req, res) => {
 };
 
 const getFriendProfile = async (req, res) => {
-  const { user } = req.query;
+  console.log('getin')
+  const { uid } = req.params;
 
-  if (!user) {
+  if (!uid) {
     return res.status(400).json({ message: "Friend UID is required" });
   }
 
@@ -399,7 +409,7 @@ const getFriendProfile = async (req, res) => {
 
     const userData = userDoc.data();
 
-    return res.status(200).json({ profile: userData });
+    return res.status(200).json(userData);
 
   } catch (error) {
     console.error("Error fetching friend profile:", error);

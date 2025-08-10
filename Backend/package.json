@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +23,8 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
-    "socket.io": "^4.8.1"
+    "regex": "^6.0.1",
+    "socket.io": "^4.8.1",
+    "stream-chat": "^9.14.0"
   }
 }
