@@ -321,6 +321,9 @@ const getFriends = async (req, res) => {
     if (currentUserData.profile_state === "Banned") {
       return res.status(200).json({ statuss: "Banned", message: "Banned" });
     }
+    if (currentUserData.profile_state === "pending") {
+      return res.status(200).json({ statuss: "pending", message: "pending" });
+    }
 
     // Otherwise, fetch all users except self and only approved users
     const usersSnapshot = await db.collection("users").get();
