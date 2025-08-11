@@ -6,7 +6,7 @@ const pendinguser = async (req, res, next) => {
   try {
     console.log("Fetching pending users...");
     const db = require("firebase-admin").firestore();
-    const snapshot = await db.collection("users").where("profile_state", "==", "pending").get();
+    const snapshot = await db.collection("users").get();
 
     if (snapshot.empty) {
       console.log("No pending users found.");
@@ -49,6 +49,7 @@ const pendinguser = async (req, res, next) => {
 
 const userState = async (req, res, next) => {
   try {
+    console.log("Updating user state...");
     const db = require("firebase-admin").firestore();
     const { uid, statedata } = req.body;
 
@@ -63,10 +64,13 @@ const userState = async (req, res, next) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    await userRef.update({ register_state: statedata });
+    await userRef.update({ profile_state: statedata });
 
-    res.json({ message: "User register_state updated successfully" });
-  } catch (error) {
+    return res.status(200).json({
+      success: true,
+      message: "User profile_state updated successfully",
+      state: statedata
+    });  } catch (error) {
     console.error("Error updating user state:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }

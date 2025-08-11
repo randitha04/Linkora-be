@@ -12,12 +12,15 @@ const {
 } = require('../../userController/admin/adminController');
 
 
-const { adminLogin } = require('../../userController/admin/adminAuth');
+const { adminLogin,adminRefreshToken } = require('../../userController/admin/adminAuth');
 
 
 
 // Admin login route
 router.post('/admin-login' , adminLogin);
+
+//refresh_admin_token
+router.post('/refresh-admin-token',adminRefreshToken )
 
 // Dashboard stats route (GET or POST depending on your design)
 router.get('/dashboard',adminMiddleware , dashboard);
