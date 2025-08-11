@@ -295,7 +295,7 @@ const acceptFriendRequest = async (req, res) => {
 
 
 const getFriends = async (req, res) => {
-  const uid = req.user?.uid; 
+  const uid = req.user?.uid;
 
   console.log('use', uid);
 
@@ -308,8 +308,9 @@ const getFriends = async (req, res) => {
 
     const allUsers = usersSnapshot.docs
       .map(doc => ({ uid: doc.id, ...doc.data() }))
-      .filter(user => user.uid !== uid); //  exclude current user
-
+      // Exclude current user AND only include users with profile_state === "Approve"
+      .filter(user => user.uid !== uid && user.profile_state === "Approve");
+       
     return res.status(200).json({ friends: allUsers });
 
   } catch (error) {
@@ -317,6 +318,7 @@ const getFriends = async (req, res) => {
     return res.status(500).json({ message: "Error fetching users", error: error.message });
   }
 };
+
 
 
 
@@ -416,6 +418,13 @@ const getFriendProfile = async (req, res) => {
     return res.status(500).json({ message: "Error fetching friend profile", error: error.message });
   }
 };
+
+
+
+
+
+
+
 
 
 

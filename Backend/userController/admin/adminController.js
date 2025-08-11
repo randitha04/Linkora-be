@@ -2,14 +2,20 @@
 const { getFirestore } = require('firebase-admin/firestore');
 const db = getFirestore();
 
-//user controller for admin operations
 const pendinguser = async (req, res, next) => {
   try {
+    console.log("Fetching pending users...");
     const db = require("firebase-admin").firestore();
-    const snapshot = await db.collection("users").where("register_state", "==", "pending").get();
+    const snapshot = await db.collection("users").where("profile_state", "==", "pending").get();
 
     if (snapshot.empty) {
-      return res.json([]);
+      console.log("No pending users found.");
+      return res.status(200).json({
+        success: true,
+        data: [],
+        totalPages: 1,
+        totalCount: 0,
+      });
     }
 
     const pendingUsers = [];
@@ -17,10 +23,26 @@ const pendinguser = async (req, res, next) => {
       pendingUsers.push({ id: doc.id, ...doc.data() });
     });
 
-    res.json(pendingUsers);
+    // For pagination, calculate totalCount and totalPages (assuming 20 per page)
+    const totalCount = pendingUsers.length;
+    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page) || 1;
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Paginate the users array
+    const paginatedUsers = pendingUsers.slice((page - 1) * limit, page * limit);
+
+    res.status(200).json({
+      success: true,
+      data: paginatedUsers,
+      totalPages,
+      totalCount,
+    });
+
+    console.log(`Pending users fetched successfully: ${paginatedUsers.length} users on page ${page}`);
   } catch (error) {
     console.error("Error fetching pending users:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
