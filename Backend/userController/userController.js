@@ -28,6 +28,8 @@ const getUserProfile = async (req, res) => {
       email: userData.email,
       degreeCard: userData.degreeCard,
       fullName: userData.name || userData.fullName,
+      profile_state: userData.profile_state,
+      userquality: userData.userquality,
       profilePicture: userData.profilePicture || "/Backend/assest/nopic.jpg",
       bannerImage: userData.bannerImage || "",
       relationshipState: userData.relationshipState || userData.relationshipStatus, 
@@ -304,13 +306,29 @@ const getFriends = async (req, res) => {
   }
 
   try {
+    const db = require("firebase-admin").firestore();
+
+    // Get current user doc to check profile_state
+    const currentUserDoc = await db.collection("users").doc(uid).get();
+
+    if (!currentUserDoc.exists) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const currentUserData = currentUserDoc.data();
+
+    // If current user is banned, return empty list immediately
+    if (currentUserData.profile_state === "Banned") {
+      return res.status(200).json({ statuss: "Banned", message: "Banned" });
+    }
+
+    // Otherwise, fetch all users except self and only approved users
     const usersSnapshot = await db.collection("users").get();
 
     const allUsers = usersSnapshot.docs
       .map(doc => ({ uid: doc.id, ...doc.data() }))
-      // Exclude current user AND only include users with profile_state === "Approve"
-      .filter(user => user.uid !== uid && user.profile_state === "Approve");
-       
+      .filter(user => user.uid !== uid && user.profile_state === "Approved");
+
     return res.status(200).json({ friends: allUsers });
 
   } catch (error) {
