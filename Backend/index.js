@@ -10,7 +10,7 @@ const ensureAdminUser = require('./userController/admin/adminRole');
 
 
 
-const allowedOrigins = ["https://linkora-ui-dashboard-jzkinp9dc-atgayans-projects.vercel.app","https://linkora-frontend-omb9uakg1-atgayans-projects.vercel.app"];
+const allowedOrigins = ["https://linkora-ui-dashboard-jzkinp9dc-atgayans-projects.vercel.app","https://linkora-frontend-omb9uakg1-atgayans-projects.vercel.app","http://localhost:3000","http://localhost:3001"];
 
 //  Comprehensive CORS configuration
 app.use(cors({

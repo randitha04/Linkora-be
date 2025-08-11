@@ -20,10 +20,8 @@ async function adminLogin(req, res) {
       "Set-Cookie",
       cookie.serialize("admintoken", idToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, 
-        path: "/",
-        sameSite: "None"
+        secure: true,
+        sameSite: "None",
       })
     );
 
@@ -68,11 +66,9 @@ async function adminRefreshToken(req, res) {
     res.setHeader(
       "Set-Cookie",
       cookie.serialize("admintoken", idToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: "/",
-        sameSite: "None"
+       httpOnly: true,
+       secure: true,
+       sameSite: "None",
       })
     );
 
@@ -89,9 +85,7 @@ async function adminRefreshToken(req, res) {
       "Set-Cookie",
       cookie.serialize("admintoken", "", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 0,
-        path: "/",
+        secure: true,
         sameSite: "None",
       })
     );
