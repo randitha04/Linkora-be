@@ -14,6 +14,7 @@ function createUserModel(data) {
     uid: data.uid,
     fullName: data.fullName,
     degreeCard: data.degreeCard || null,
+    Gender: data.Gender || null,
     profilePicture: data.profilePicture || null,
     bannerImage: data.bannerImage || null,
     email: data.email || null,
@@ -51,6 +52,7 @@ function createUserModel(data) {
     role: data.role || "user",
     register_state: data.register_state || false,
     userquality: data.userquality || "good",
+    profile_state: data.profile_state || "pending",
   
   };
 }

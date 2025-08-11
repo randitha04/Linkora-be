@@ -22,13 +22,13 @@ const registerUser = async (req, res) => {
     profilePicture,
     degreeCard,
     bannerImage,
-    university,    // expected to be an object
-    professional,  // expected to be an object
-    personality,   // expected to be an object
-    activity,      // expected to be an object
-    socialLinks,   // note: your model uses socialPreferences, not socialLinks, fix accordingly
+    university,   
+    professional, 
+    personality,   
+    activity,     
+    socialLinks,  
   } = userObject;
-
+  console.log("Registering user with data:", userObject);
   // Basic validation
   if (!token || !uid || !email || !fullName || !university) {
     return res.status(400).json({ message: "Missing required data" });
@@ -52,6 +52,7 @@ const registerUser = async (req, res) => {
       uid,
       fullName,
       degreeCard,
+      Gender:userObject.Gender,
       profilePicture,
       bannerImage,
       email,

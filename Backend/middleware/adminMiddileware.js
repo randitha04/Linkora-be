@@ -1,28 +1,33 @@
-const jwt = require("jsonwebtoken");
+const { admin } = require('../config/firebaseConfig');
 
-const adminMiddleware = (req, res, next) => {
+const adminMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    console.log("Identifying admin user...");
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // Get token from cookies
+    const { admintoken } = req.cookies;
+    console.log("Admin token found:", admintoken ? "Yes" : "No");
+
+    if (!admintoken) {
       return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
-    const token = authHeader.split(" ")[1];
+    // Verify Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(admintoken);
 
-    // Replace "your_jwt_secret" with your actual secret or use env variable
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
-
-    if (!decoded || decoded.role !== "admin") {
-      return res.status(401).json({ error: "Unauthorized: Admin access required" });
+    // Check custom claim for admin role
+    if (!decodedToken.role || decodedToken.role !== "admin") {
+      console.log("Unauthorized: Admin access required");
+      return res.status(403).json({ error: "Forbidden: Admin access required" });
     }
 
-    // Optionally attach user info to req object
-    req.user = decoded;
+    // Attach user info to request
+    req.user = decodedToken;
 
     next();
   } catch (error) {
-    return res.status(401).json({ error: "Unauthorized: Invalid token" });
+    console.error("Token verification error:", error.message);
+    return res.status(401).json({ error: "Unauthorized: Invalid or expired token" });
   }
 };
 
