@@ -7,8 +7,11 @@ const adminMiddleware = require('../../middleware/adminMiddileware');
 const {
   dashboard,
   pendinguser,
-  reportuser,
+  reportUser,
   userState,
+  resolveReport,
+  getReportedUsers,
+  approveReportAndDeleteUser
 } = require('../../userController/admin/adminController');
 
 
@@ -28,10 +31,23 @@ router.get('/dashboard',adminMiddleware , dashboard);
 // Get all pending users
 router.get('/pending-users',adminMiddleware , pendinguser);
 
-// Update userquality for a user (report user)
-router.put('/report-user',adminMiddleware , reportuser);
 
 // Update register_state for a user
 router.put('/user-state',adminMiddleware , userState);
+
+
+
+//report hadler
+
+// Update userquality for a user (report user)
+router.put('/report-user',adminMiddleware , reportUser);
+
+router.get('/get-reported-users',adminMiddleware , getReportedUsers);
+
+
+router.put('/resolve-report',adminMiddleware , resolveReport);
+
+router.delete('/approve-report',adminMiddleware , approveReportAndDeleteUser)
+
 
 module.exports = router;
