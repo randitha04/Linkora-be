@@ -79,28 +79,21 @@ const userState = async (req, res, next) => {
 
 const dashboard = async (req, res, next) => {
   try {
+    console.log("Fetching dashboard data...");
+
     const usersRef = db.collection("users");
 
-    // Query users excluding state='pending' and userquality='bad'
-    // Firestore doesn't support NOT operator, so we need to filter client-side or use multiple queries.
-
-    // Option 1: Get all users where state != pending and userquality != bad
-    // Firestore supports '!=' for a single field, but not multiple != in one query easily.
-    // We'll query state != 'pending' first, then filter userquality != 'bad' client-side.
-
-    const snapshot = await usersRef.where("register_state", "!=", "pending").get();
+    // Get all users except banned
+    const snapshot = await usersRef
+      .where("profile_state", "!=", "Banned")
+      .get();
 
     if (snapshot.empty) {
       return res.json({
-        totalUsers: 0,
-        maleCount: 0,
-        femaleCount: 0,
-        universityYearCounts: {
-          year1: 0,
-          year2: 0,
-          year3: 0,
-          year4: 0,
-        },
+        userCount: 0,
+        gender: [],
+        year: [],
+        skills: [],
       });
     }
 
@@ -114,16 +107,19 @@ const dashboard = async (req, res, next) => {
       year4: 0,
     };
 
+    let skillsMap = {};
+
     snapshot.forEach((doc) => {
       const user = doc.data();
 
-      if (user.userquality === "bad") return; 
-
+      // Count users
       totalUsers++;
 
+      // Gender count
       if (user.gender === "male") maleCount++;
       else if (user.gender === "female") femaleCount++;
 
+      // Year count
       switch (user.universityYear) {
         case 1:
           universityYearCounts.year1++;
@@ -138,13 +134,41 @@ const dashboard = async (req, res, next) => {
           universityYearCounts.year4++;
           break;
       }
+
+      // Skills count (assuming user.skills is an array of strings)
+      if (Array.isArray(user.skills)) {
+        user.skills.forEach((skill) => {
+          skillsMap[skill] = (skillsMap[skill] || 0) + 1;
+        });
+      }
     });
 
+    // Format gender data for PercentageBar
+    const genderData = [
+      { label: "Male", value: maleCount, color: "#3B82F6" },
+      { label: "Female", value: femaleCount, color: "#EF4444" },
+    ];
+
+    // Format year data for PercentageBar
+    const yearData = [
+      { label: "Year 1", value: universityYearCounts.year1, color: "#10B981" },
+      { label: "Year 2", value: universityYearCounts.year2, color: "#F59E0B" },
+      { label: "Year 3", value: universityYearCounts.year3, color: "#8B5CF6" },
+      { label: "Year 4", value: universityYearCounts.year4, color: "#EC4899" },
+    ];
+
+    // Format skills data for BarChart
+    const skillsData = Object.entries(skillsMap).map(([name, count]) => ({
+      name,
+      count,
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16), // random color
+    }));
+
     return res.json({
-      totalUsers,
-      maleCount,
-      femaleCount,
-      universityYearCounts,
+      userCount: totalUsers,
+      gender: genderData,
+      year: yearData,
+      skills: skillsData,
     });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
@@ -153,30 +177,164 @@ const dashboard = async (req, res, next) => {
 };
 
 
-const reportuser = async (req, res, next) => {
-  try {
-    const db = require("firebase-admin").firestore();
-    const { uid, userquality } = req.body;
 
-    if (!uid || !userquality) {
-      return res.status(400).json({ error: "uid and userquality are required" });
+
+//user report haddler
+
+const reportUser = async (req, res, next) => {
+  try {
+    console.log("Reporting user...");
+    const db = require("firebase-admin").firestore();
+    const {
+      reportedUserId,
+      reporterId,
+      reason,
+      reportedUserName,
+      reporterName,
+    } = req.body;
+
+    console.log(req.body)
+
+    // Validate required fields
+    if (
+      !reportedUserId ||
+      !reporterId ||
+      !reason ||
+      !reportedUserName ||
+      !reporterName
+    ) {
+      return res.status(400).json({ error: "All fields are required" });
     }
 
-    const userRef = db.collection("users").doc(uid);
+    const userRef = db.collection("users").doc(reportedUserId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "Reported user not found" });
+    }
+
+    // Update reported user's profile_state and userquality
+    await userRef.update({
+      profile_state: "Banned",
+      userquality: "Bad",
+    });
+
+    // Add a new document to reportedUsers collection
+    const reportRef = db.collection("reportedUsers").doc();
+    await reportRef.set({
+      reportedUserId,
+      reporterId,
+      reason,
+      reportedUserName,
+      reporterName,
+      status: "pending",
+      reportedAt: new Date().toISOString(),
+    });
+    console.log("User reported and updated successfully");
+    res.json({ message: "User reported and updated successfully" });
+  } catch (error) {
+    console.error("Error reporting user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getReportedUsers = async (req, res, next) => {
+  try {
+    const db = require("firebase-admin").firestore();
+
+    // Fetch all documents from reportedUsers collection
+    const reportsSnapshot = await db.collection("reportedUsers").get();
+
+    // Extract data and add doc id as well
+    const reports = reportsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(reports);
+  } catch (error) {
+    console.error("Error fetching reported users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const resolveReport = async (req, res, next) => {
+  try {
+    console.log("Resolving report...");
+    const db = require("firebase-admin").firestore();
+    const { userId, reportId } = req.body;
+
+    if (!userId || !reportId) {
+      return res.status(400).json({ error: "userId and reportId are required" });
+    }
+
+    // Update user document
+    const userRef = db.collection("users").doc(userId);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    await userRef.update({ userquality });
+    await userRef.update({
+      profile_state: "Approved",
+      userquality: "Good",
+    });
 
-    res.json({ message: "User quality updated successfully" });
+    // Delete the report document
+    const reportRef = db.collection("reportedUsers").doc(reportId);
+    const reportDoc = await reportRef.get();
+
+    if (!reportDoc.exists) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    await reportRef.delete();
+   console.log("User status updated and report deleted successfully");
+    res.json({ message: "User status updated and report deleted successfully" });
   } catch (error) {
-    console.error("Error updating user quality:", error);
+    console.error("Error resolving report:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+const approveReportAndDeleteUser = async (req, res, next) => {
+  try {
+    const db = require("firebase-admin").firestore();
+    const { userId, reportId } = req.body;
+
+    if (!userId || !reportId) {
+      return res.status(400).json({ error: "userId and reportId are required" });
+    }
+
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Delete the user document
+    await userRef.delete();
+
+    const reportRef = db.collection("reportedUsers").doc(reportId);
+    const reportDoc = await reportRef.get();
+
+    if (!reportDoc.exists) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    // Delete the report document
+    await reportRef.delete();
+
+    res.json({ message: "User and report deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user and report:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 
 
 
@@ -185,7 +343,10 @@ module.exports = {
   pendinguser,
   userState,
   dashboard,
-  reportuser
+  reportUser,
+  getReportedUsers,
+  resolveReport,
+  approveReportAndDeleteUser
 };
 
 
