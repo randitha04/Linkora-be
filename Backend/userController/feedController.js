@@ -76,7 +76,7 @@ const getAllPosts = async (req, res) => {
 // Get all posts for a specific user by userId (sent from frontend)
 const friendsPosts = async (req, res) => {
   try {
-    const targetUserId = req.params.userId; // from route like /friends-posts/:userId
+    const targetUserId = req.params.userId; 
 
     if (!targetUserId) {
       return res.status(400).json({ error: "User ID is required" });
@@ -90,7 +90,7 @@ const friendsPosts = async (req, res) => {
       .get();
 
     if (postsSnapshot.empty) {
-      return res.status(200).json([]); // No posts for this user
+      return res.status(200).json([]); 
     }
 
     const posts = postsSnapshot.docs.map(doc => ({
