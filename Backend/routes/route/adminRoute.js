@@ -7,7 +7,6 @@ const adminMiddleware = require('../../middleware/adminMiddileware');
 const {
   dashboard,
   pendinguser,
-  reportUser,
   userState,
   resolveReport,
   getReportedUsers,
@@ -39,8 +38,6 @@ router.put('/user-state',adminMiddleware , userState);
 
 //report hadler
 
-// Update userquality for a user (report user)
-router.put('/report-user',adminMiddleware , reportUser);
 
 router.get('/get-reported-users',adminMiddleware , getReportedUsers);
 

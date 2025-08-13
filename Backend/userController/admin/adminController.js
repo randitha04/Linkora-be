@@ -178,66 +178,6 @@ const dashboard = async (req, res, next) => {
 
 
 
-
-//user report haddler
-
-const reportUser = async (req, res, next) => {
-  try {
-    console.log("Reporting user...");
-    const db = require("firebase-admin").firestore();
-    const {
-      reportedUserId,
-      reporterId,
-      reason,
-      reportedUserName,
-      reporterName,
-    } = req.body;
-
-    console.log(req.body)
-
-    // Validate required fields
-    if (
-      !reportedUserId ||
-      !reporterId ||
-      !reason ||
-      !reportedUserName ||
-      !reporterName
-    ) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    const userRef = db.collection("users").doc(reportedUserId);
-    const userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      return res.status(404).json({ error: "Reported user not found" });
-    }
-
-    // Update reported user's profile_state and userquality
-    await userRef.update({
-      profile_state: "Banned",
-      userquality: "Bad",
-    });
-
-    // Add a new document to reportedUsers collection
-    const reportRef = db.collection("reportedUsers").doc();
-    await reportRef.set({
-      reportedUserId,
-      reporterId,
-      reason,
-      reportedUserName,
-      reporterName,
-      status: "pending",
-      reportedAt: new Date().toISOString(),
-    });
-    console.log("User reported and updated successfully");
-    res.json({ message: "User reported and updated successfully" });
-  } catch (error) {
-    console.error("Error reporting user:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
 const getReportedUsers = async (req, res, next) => {
   try {
     const db = require("firebase-admin").firestore();
@@ -343,7 +283,6 @@ module.exports = {
   pendinguser,
   userState,
   dashboard,
-  reportUser,
   getReportedUsers,
   resolveReport,
   approveReportAndDeleteUser
