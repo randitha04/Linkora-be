@@ -27,6 +27,9 @@ router.post("/accept-request",verifyFirebaseToken, profileController.acceptFrien
 // Get all friends
 router.get("/friends/",verifyFirebaseToken,profileController.getFriends);
 
+// report user
+router.put('/report-user',verifyFirebaseToken ,profileController.reportUser);
+
 //Get friends profile
 router.get("/friends-profile/:uid", verifyFirebaseToken, profileController.getFriendProfile);
 
